@@ -29,8 +29,3 @@ ADAPTER_MODE = os.getenv(
 
 SUPPORTED_ADAPTERS = {"mock", "powerbi"}
 
-if ADAPTER_MODE not in SUPPORTED_ADAPTERS:
-    raise ValueError(
-        f"Unsupported adapter: {ADAPTER_MODE}. "
-        f"Expected one of: {', '.join(sorted(SUPPORTED_ADAPTERS))}"
-    )

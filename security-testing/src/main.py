@@ -52,6 +52,15 @@ def load_mock_data(file_path: Path) -> dict[str, set[str]]:
 
 def load_test_cases(file_path: Path) -> list[dict]:
     test_cases = []
+    seen_test_ids = set()
+
+    supported_scenarios = {
+        "ALLOW",
+        "DENY",
+        "UNKNOWN_USER",
+        "INACTIVE_USER",
+        "MULTI_REGION",
+    }
 
     with file_path.open(
         mode="r",
@@ -71,21 +80,51 @@ def load_test_cases(file_path: Path) -> list[dict]:
         if not reader.fieldnames or not required.issubset(reader.fieldnames):
             raise ValueError("Invalid test catalog CSV format")
 
-        for row in reader:
+        for line_number, row in enumerate(reader, start=2):
+
+            if any(row.get(field) is None for field in required):
+                raise ValueError(
+                    f"Invalid test case at line {line_number}: "
+                    "missing CSV field"
+                )
+
             test_id = row["TestId"].strip()
             user = row["UserPrincipalName"].strip()
             scenario = row["ScenarioType"].strip().upper()
-            target = row["TargetRegion"].strip() or None
+            target = row["TargetRegion"].strip().upper() or None
+            description = row["Description"].strip()
 
-            if not test_id or not user or not scenario:
-                raise ValueError("Test catalog contains an incomplete test case")
+            if not test_id or not user or not description:
+                raise ValueError(
+                    f"Incomplete test case at line {line_number}"
+                )
+
+            if test_id in seen_test_ids:
+                raise ValueError(
+                    f"Duplicate TestId '{test_id}' "
+                    f"at line {line_number}"
+                )
+
+            if scenario not in supported_scenarios:
+                raise ValueError(
+                    f"Unsupported scenario '{scenario}' "
+                    f"at line {line_number}"
+                )
+
+            if scenario in {"ALLOW", "DENY"} and not target:
+                raise ValueError(
+                    f"TargetRegion is required for {scenario} "
+                    f"at line {line_number}"
+                )
+
+            seen_test_ids.add(test_id)
 
             test_cases.append({
                 "test_id": test_id,
                 "user": user,
                 "target_region": target,
                 "scenario": scenario,
-                "description": row["Description"].strip(),
+                "description": description,
             })
 
     return test_cases

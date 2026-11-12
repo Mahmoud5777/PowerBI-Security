@@ -1,8 +1,7 @@
-
+import importlib
 import pytest
 
 from src import settings
-
 
 def test_default_adapter_is_mock():
     assert settings.ADAPTER_MODE == "mock"
@@ -23,14 +22,12 @@ def test_reports_directory_is_correct():
     assert settings.REPORTS_DIR.exists()
 
 
-def test_invalid_adapter_is_rejected(monkeypatch):
+def test_invalid_adapter_is_loaded_for_cli_validation(monkeypatch):
     monkeypatch.setenv("SECURITY_ADAPTER", "unknown")
 
-    with pytest.raises(ValueError, match="Unsupported adapter"):
-        import importlib
-        importlib.reload(settings)
+    importlib.reload(settings)
 
-    # Restore the module after the test.
-    monkeypatch.delenv("SECURITY_ADAPTER", raising=False)
-    import importlib
+    assert settings.ADAPTER_MODE == "unknown"
+
+    monkeypatch.setenv("SECURITY_ADAPTER", "mock")
     importlib.reload(settings)
