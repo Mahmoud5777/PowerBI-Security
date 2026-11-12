@@ -11,10 +11,22 @@ class SecurityTestEngine:
         self.matrix_path = Path(matrix_path)
         self.adapter = adapter
 
-    def load_authorizations(self) -> dict[str, set[str]]:
-        """Charge les régions autorisées pour chaque utilisateur actif."""
+    @staticmethod
+    def _parse_active(value: str) -> bool:
+        """Valide et convertit la valeur IsActive."""
 
-        authorizations: dict[str, set[str]] = {}
+        active_value = value.strip().lower()
+
+        if active_value not in {"true", "false"}:
+            raise ValueError(
+                f"Invalid IsActive value: '{value}'. "
+                "Expected 'true' or 'false'."
+            )
+
+        return active_value == "true"
+
+    def _load_matrix(self) -> list[dict]:
+        """Charge et valide les données de la matrice CSV."""
 
         with self.matrix_path.open(
             mode="r",
@@ -32,44 +44,50 @@ class SecurityTestEngine:
             if not reader.fieldnames or not required.issubset(reader.fieldnames):
                 raise ValueError("Invalid authorization matrix format")
 
+            rows = []
+
             for row in reader:
+                if any(row.get(field) is None for field in required):
+                    raise ValueError("Invalid authorization matrix format")
+
                 user = row["UserPrincipalName"].strip().lower()
                 region = row["RegionCode"].strip().upper()
-                active = row["IsActive"].strip().lower() == "true"
+                active = self._parse_active(row["IsActive"])
 
-                if user and region and active:
-                    authorizations.setdefault(user, set()).add(region)
+                if not user or not region:
+                    raise ValueError(
+                        "Missing required value: "
+                        "UserPrincipalName and RegionCode cannot be empty."
+                    )
+
+                rows.append({
+                    "user": user,
+                    "region": region,
+                    "active": active,
+                })
+
+            return rows
+
+    def load_authorizations(self) -> dict[str, set[str]]:
+        """Charge les régions autorisées pour chaque utilisateur actif."""
+
+        authorizations: dict[str, set[str]] = {}
+
+        for row in self._load_matrix():
+            if row["active"]:
+                authorizations.setdefault(
+                    row["user"], set()
+                ).add(row["region"])
 
         return authorizations
 
     def load_all_users(self) -> set[str]:
         """Retourne tous les utilisateurs présents dans la matrice."""
 
-        users = set()
-
-        with self.matrix_path.open(
-            mode="r",
-            encoding="utf-8-sig",
-            newline=""
-        ) as file:
-            reader = csv.DictReader(file)
-
-            required = {
-                "UserPrincipalName",
-                "RegionCode",
-                "IsActive",
-            }
-
-            if not reader.fieldnames or not required.issubset(reader.fieldnames):
-                raise ValueError("Invalid authorization matrix format")
-
-            for row in reader:
-                user = row["UserPrincipalName"].strip().lower()
-
-                if user:
-                    users.add(user)
-
-        return users
+        return {
+            row["user"]
+            for row in self._load_matrix()
+        }
 
     def run_test(
         self,

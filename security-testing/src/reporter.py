@@ -26,6 +26,14 @@ class ReportGenerator:
             "errors": sum(
                 result["status"] == "ERROR" for result in results
             ),
+            "unauthorized_access_tests": sum(
+                bool(result.get("unauthorized_regions"))
+                for result in results
+            ),
+            "over_restriction_tests": sum(
+                bool(result.get("missing_regions"))
+                for result in results
+            ),
             "results": results,
         }
 

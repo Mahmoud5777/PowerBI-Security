@@ -174,6 +174,14 @@ def run_security_tests() -> int:
         failed = sum(r["status"] == "FAIL" for r in results)
         errors = sum(r["status"] == "ERROR" for r in results)
 
+        unauthorized_access_tests = sum(
+            bool(r.get("unauthorized_regions")) for r in results
+        )
+
+        over_restriction_tests = sum(
+            bool(r.get("missing_regions")) for r in results
+        )
+
         print("\n" + "=" * 55)
         print("                 TEST SUMMARY")
         print("=" * 55)
@@ -181,6 +189,8 @@ def run_security_tests() -> int:
         print(f"Passed      : {passed}")
         print(f"Failed      : {failed}")
         print(f"Errors      : {errors}")
+        print(f"Data leaks  : {unauthorized_access_tests}")
+        print(f"Over-restrictions : {over_restriction_tests}")
         print(f"\nJSON report : {json_path}")
         print(f"CSV report  : {csv_path}")
         print("=" * 55)
