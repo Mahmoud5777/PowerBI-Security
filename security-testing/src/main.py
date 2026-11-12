@@ -1,24 +1,20 @@
-
+from src import settings
 import csv
 import sys
 from pathlib import Path
 
-from src.adapters.mock_adapter import MockAdapter
 from src.reporter import ReportGenerator
 from src.test_engine import SecurityTestEngine
-
+from src.adapter_factory import create_adapter
 
 # --------------------------------------------------
 # Project paths
 # --------------------------------------------------
 
-SECURITY_TESTING_DIR = Path(__file__).resolve().parents[1]
-PROJECT_ROOT = SECURITY_TESTING_DIR.parent
-
-MATRIX_PATH = PROJECT_ROOT / "contracts" / "authorization_matrix.csv"
-TEST_CASES_PATH = SECURITY_TESTING_DIR / "config" / "test_cases.csv"
-MOCK_DATA_PATH = SECURITY_TESTING_DIR / "config" / "mock_visible_regions.csv"
-REPORTS_DIR = SECURITY_TESTING_DIR / "reports"
+MATRIX_PATH = settings.AUTHORIZATION_MATRIX_PATH
+TEST_CASES_PATH = settings.TEST_CASES_PATH
+MOCK_DATA_PATH = settings.MOCK_VISIBLE_REGIONS_PATH
+REPORTS_PATH = settings.REPORTS_DIR
 
 
 # --------------------------------------------------
@@ -106,13 +102,30 @@ def run_security_tests() -> int:
         print("=" * 55)
 
         # Check required files
-        for path in [MATRIX_PATH, TEST_CASES_PATH, MOCK_DATA_PATH]:
-            if not path.exists():
-                raise FileNotFoundError(f"Required file not found: {path}")
+        required_files = {
+            "Authorization matrix": MATRIX_PATH,
+            "Test catalog": TEST_CASES_PATH,
+        }
+
+        if settings.ADAPTER_MODE == "mock":
+            required_files["Mock visible regions"] = MOCK_DATA_PATH
+
+        for name, path in required_files.items():
+            if not path.is_file():
+                raise FileNotFoundError(
+                    f"{name} file not found: {path}"
+                )
 
         # Load data
-        print("\n[1/4] Loading mock data...")
-        mock_data = load_mock_data(MOCK_DATA_PATH)
+        print("\n[1/4] Loading configuration...")
+
+        mock_data = None
+
+        if settings.ADAPTER_MODE == "mock":
+            print("Loading mock data...")
+            mock_data = load_mock_data(MOCK_DATA_PATH)
+
+        print(f"Selected adapter: {settings.ADAPTER_MODE}")
 
         print("[2/4] Loading test catalog...")
         test_cases = load_test_cases(TEST_CASES_PATH)
@@ -121,9 +134,25 @@ def run_security_tests() -> int:
             raise ValueError("The test catalog contains no test cases.")
 
         # Initialize components
-        adapter = MockAdapter(mock_data)
+        adapter = create_adapter(
+            settings.ADAPTER_MODE,
+            mock_data=mock_data,
+        )
+
         engine = SecurityTestEngine(MATRIX_PATH, adapter)
-        reporter = ReportGenerator(str(REPORTS_DIR))
+        reporter = ReportGenerator(str(REPORTS_PATH))
+
+        if not test_cases:
+            raise ValueError("The test catalog contains no test cases.")
+
+        # Initialize components
+        adapter = create_adapter(
+            settings.ADAPTER_MODE,
+            mock_data=mock_data,
+        )
+
+        engine = SecurityTestEngine(MATRIX_PATH, adapter)
+        reporter = ReportGenerator(str(REPORTS_PATH))
 
         # Execute scenarios
         print("[3/4] Executing security tests...\n")
@@ -197,7 +226,7 @@ def run_security_tests() -> int:
 
         return 1 if failed or errors else 0
 
-    except (OSError, ValueError) as error:
+    except (OSError, ValueError, RuntimeError) as error:
         print(f"\n[ERROR] {error}", file=sys.stderr)
         return 2
 
