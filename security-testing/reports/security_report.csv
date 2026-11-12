@@ -1,0 +1,6 @@
+﻿test_id,user,scenario,target_region,description,expected_regions,actual_regions,missing_regions,unauthorized_regions,status,error
+TC001,manager.fr@example.com,ALLOW,FR,Verify authorized access to France,FR,FR,,,PASS,
+TC002,manager.fr@example.com,DENY,DE,Verify denial of Germany access,FR,FR,,,PASS,
+TC003,unknown@example.com,UNKNOWN_USER,,Verify unknown user has no access,,,,,PASS,
+TC004,old.user@example.com,INACTIVE_USER,,Verify inactive user has no access,,,,,PASS,
+TC005,manager.eu@example.com,MULTI_REGION,,Verify access to multiple authorized regions,DE;ES;FR,DE;ES;FR,,,PASS,

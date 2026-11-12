@@ -1,1 +1,7 @@
 ﻿UserPrincipalName,RegionCode,IsActive
+manager.fr@example.com,FR,true
+manager.de@example.com,DE,true
+manager.eu@example.com,FR,true
+manager.eu@example.com,DE,true
+manager.eu@example.com,ES,true
+old.user@example.com,FR,false

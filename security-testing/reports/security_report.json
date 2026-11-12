@@ -1,0 +1,84 @@
+{
+    "total_tests": 5,
+    "passed": 5,
+    "failed": 0,
+    "errors": 0,
+    "results": [
+        {
+            "user": "manager.fr@example.com",
+            "scenario": "ALLOW",
+            "target_region": "FR",
+            "expected_regions": [
+                "FR"
+            ],
+            "actual_regions": [
+                "FR"
+            ],
+            "missing_regions": [],
+            "unauthorized_regions": [],
+            "status": "PASS",
+            "test_id": "TC001",
+            "description": "Verify authorized access to France"
+        },
+        {
+            "user": "manager.fr@example.com",
+            "scenario": "DENY",
+            "target_region": "DE",
+            "expected_regions": [
+                "FR"
+            ],
+            "actual_regions": [
+                "FR"
+            ],
+            "missing_regions": [],
+            "unauthorized_regions": [],
+            "status": "PASS",
+            "test_id": "TC002",
+            "description": "Verify denial of Germany access"
+        },
+        {
+            "user": "unknown@example.com",
+            "scenario": "UNKNOWN_USER",
+            "target_region": null,
+            "expected_regions": [],
+            "actual_regions": [],
+            "missing_regions": [],
+            "unauthorized_regions": [],
+            "status": "PASS",
+            "test_id": "TC003",
+            "description": "Verify unknown user has no access"
+        },
+        {
+            "user": "old.user@example.com",
+            "scenario": "INACTIVE_USER",
+            "target_region": null,
+            "expected_regions": [],
+            "actual_regions": [],
+            "missing_regions": [],
+            "unauthorized_regions": [],
+            "status": "PASS",
+            "test_id": "TC004",
+            "description": "Verify inactive user has no access"
+        },
+        {
+            "user": "manager.eu@example.com",
+            "scenario": "MULTI_REGION",
+            "target_region": null,
+            "expected_regions": [
+                "DE",
+                "ES",
+                "FR"
+            ],
+            "actual_regions": [
+                "DE",
+                "ES",
+                "FR"
+            ],
+            "missing_regions": [],
+            "unauthorized_regions": [],
+            "status": "PASS",
+            "test_id": "TC005",
+            "description": "Verify access to multiple authorized regions"
+        }
+    ]
+}

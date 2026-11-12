@@ -11,44 +11,75 @@ class ReportGenerator:
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def generate_json(self, results: list[dict]) -> Path:
+        """Génère un rapport JSON avec le résumé des tests."""
+
         report_path = self.output_dir / "security_report.json"
 
         report = {
             "total_tests": len(results),
-            "passed": sum(r["status"] == "PASS" for r in results),
-            "failed": sum(r["status"] == "FAIL" for r in results),
+            "passed": sum(
+                result["status"] == "PASS" for result in results
+            ),
+            "failed": sum(
+                result["status"] == "FAIL" for result in results
+            ),
+            "errors": sum(
+                result["status"] == "ERROR" for result in results
+            ),
             "results": results,
         }
 
         with report_path.open("w", encoding="utf-8") as file:
-            json.dump(report, file, indent=4, ensure_ascii=False)
+            json.dump(
+                report,
+                file,
+                indent=4,
+                ensure_ascii=False
+            )
 
         return report_path
 
     def generate_csv(self, results: list[dict]) -> Path:
+        """Génère un rapport CSV détaillé."""
+
         report_path = self.output_dir / "security_report.csv"
 
         fieldnames = [
+            "test_id",
             "user",
+            "scenario",
+            "target_region",
+            "description",
             "expected_regions",
             "actual_regions",
             "missing_regions",
             "unauthorized_regions",
             "status",
+            "error",
         ]
 
         with report_path.open(
-            "w", encoding="utf-8-sig", newline=""
+            "w",
+            encoding="utf-8-sig",
+            newline=""
         ) as file:
-            writer = csv.DictWriter(file, fieldnames=fieldnames)
+
+            writer = csv.DictWriter(
+                file,
+                fieldnames=fieldnames,
+                extrasaction="ignore"
+            )
+
             writer.writeheader()
 
             for result in results:
                 row = result.copy()
 
                 for field in fieldnames:
-                    if field in row and isinstance(row[field], list):
-                        row[field] = ";".join(row[field])
+                    value = row.get(field)
+
+                    if isinstance(value, list):
+                        row[field] = ";".join(value)
 
                 writer.writerow(row)
 

@@ -118,3 +118,47 @@ def test_multi_region_user_passes(tmp_path):
     assert result["status"] == "PASS"
     assert result["expected_regions"] == ["DE", "ES", "FR"]
     assert result["actual_regions"] == ["DE", "ES", "FR"]
+
+def test_over_restriction_fails(tmp_path):
+    matrix = create_matrix(
+        tmp_path,
+        "UserPrincipalName,RegionCode,IsActive\n"
+        "manager.eu@example.com,FR,true\n"
+        "manager.eu@example.com,DE,true\n"
+        "manager.eu@example.com,ES,true\n"
+    )
+
+    adapter = MockAdapter({
+        "manager.eu@example.com": {"FR", "DE"}
+    })
+
+    engine = SecurityTestEngine(matrix, adapter)
+    result = engine.run_test(
+        "manager.eu@example.com",
+        scenario_type="MULTI_REGION",
+    )
+
+    assert result["status"] == "FAIL"
+    assert result["missing_regions"] == ["ES"]
+
+
+def test_authorized_user_with_data_leak_fails(tmp_path):
+    matrix = create_matrix(
+        tmp_path,
+        "UserPrincipalName,RegionCode,IsActive\n"
+        "manager.fr@example.com,FR,true\n"
+    )
+
+    adapter = MockAdapter({
+        "manager.fr@example.com": {"FR", "DE"}
+    })
+
+    engine = SecurityTestEngine(matrix, adapter)
+    result = engine.run_test(
+        "manager.fr@example.com",
+        target_region="FR",
+        scenario_type="ALLOW",
+    )
+
+    assert result["status"] == "FAIL"
+    assert result["unauthorized_regions"] == ["DE"]

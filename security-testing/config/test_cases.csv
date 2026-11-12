@@ -1,1 +1,6 @@
 ﻿TestId,UserPrincipalName,TargetRegion,ScenarioType,Description
+TC001,manager.fr@example.com,FR,ALLOW,Verify authorized access to France
+TC002,manager.fr@example.com,DE,DENY,Verify denial of Germany access
+TC003,unknown@example.com,,UNKNOWN_USER,Verify unknown user has no access
+TC004,old.user@example.com,,INACTIVE_USER,Verify inactive user has no access
+TC005,manager.eu@example.com,,MULTI_REGION,Verify access to multiple authorized regions
