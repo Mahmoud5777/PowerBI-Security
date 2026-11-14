@@ -1,0 +1,7 @@
+UserPrincipalName,RegionCode,IsActive
+manager.fr@demo.local,FR,true
+manager.de@demo.local,DE,true
+manager.eu@demo.local,FR,true
+manager.eu@demo.local,DE,true
+manager.eu@demo.local,ES,true
+inactive@demo.local,FR,false

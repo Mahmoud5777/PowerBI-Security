@@ -1,0 +1,46 @@
+name: DevSecOps demo - donnees fictives
+
+on:
+  push:
+    branches: [pole-3-devsecops]
+  pull_request:
+    paths:
+      - 'devsecops/**'
+      - '.github/workflows/devsecops-demo.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reporting-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verifier le contrat du reporting
+        run: python -m unittest discover -s devsecops/tests -v
+      - name: Exemple sain - gate doit reussir
+        run: python devsecops/reporting/generate_report.py --input devsecops/examples/healthy.json --output devsecops/reports/demo-baseline.md --demo
+      - name: Exemples de mutations - verifier le code d'echec
+        shell: bash
+        run: |
+          set +e
+          python devsecops/reporting/generate_report.py --input devsecops/examples/MUT-01.json --output devsecops/reports/demo-MUT-01.md --mutation-id MUT-01 --expected-failure SEC-002 --demo
+          code=$?
+          if [ "$code" -ne 1 ]; then exit 1; fi
+          python devsecops/reporting/generate_report.py --input devsecops/examples/MUT-02.json --output devsecops/reports/demo-MUT-02.md --mutation-id MUT-02 --expected-failure SEC-003 --expected-failure SEC-008 --demo
+          code=$?
+          if [ "$code" -ne 1 ]; then exit 1; fi
+          python devsecops/reporting/generate_report.py --input devsecops/examples/MUT-03.json --output devsecops/reports/demo-MUT-03.md --mutation-id MUT-03 --expected-failure SEC-002 --demo
+          code=$?
+          if [ "$code" -ne 1 ]; then exit 1; fi
+      - name: Publier les rapports de demonstration
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: devsecops-demo-reports
+          path: devsecops/reports/
+          if-no-files-found: warn
